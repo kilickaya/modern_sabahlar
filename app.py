@@ -18,7 +18,7 @@ API_TOKEN = "https://cloud.mail.ru/api/v2/tokens/download"
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "*/*",
-    "Referer": f"https://cloud.mail.ru/public/{DEFAULT_SHARE}",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 PROGRESS_PATH = "progress.json"
@@ -31,6 +31,8 @@ def get_http():
     return s
 
 def prime_public_session(http: requests.Session, share: str) -> None:
+    http.headers["Referer"] = f"https://cloud.mail.ru/public/{share.strip('/')}"
+    http.headers["Origin"] = "https://cloud.mail.ru"
     url = f"{CLOUD_PUBLIC}/{safe_quote(share.strip('/'))}"
     http.get(url, timeout=30)
 
@@ -45,7 +47,21 @@ def get_download_token_cached(share: str) -> str:
     return data["body"]["token"]
 
 def get_download_token(share: str) -> str:
-    return get_download_token_cached(share)
+    http = get_http()
+    prime_public_session(http, share)
+    r = http.get(API_TOKEN, timeout=30)
+    if r.status_code >= 400:
+        st.error(f"Token request failed. HTTP {r.status_code}")
+        st.code(r.text[:800])
+        st.stop()
+    try:
+        data = r.json()
+        return data["body"]["token"]
+    except Exception:
+        st.error("Token response was not JSON (likely anti-bot HTML). First 800 chars:")
+        st.code(r.text[:800])
+        st.stop()
+
 
 def safe_quote(s: str) -> str:
     return urllib.parse.quote(s, safe="~@#$()*!=:;,.?/\\'")
