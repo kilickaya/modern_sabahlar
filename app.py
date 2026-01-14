@@ -16,9 +16,10 @@ API_FOLDER = "https://cloud.mail.ru/api/v2/folder"
 API_TOKEN = "https://cloud.mail.ru/api/v2/tokens/download"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept": "*/*",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
+    "X-Requested-With": "XMLHttpRequest",
 }
 
 PROGRESS_PATH = "progress.json"
