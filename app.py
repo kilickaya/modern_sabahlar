@@ -236,7 +236,7 @@ except Exception as e:
     st.error(f"Failed to initialize base URL. Error: {e}")
     st.stop()
 
-token = get_download_token()
+token = get_download_token(share)
 
 def load_first_page_if_needed():
     if st.session_state.offset > 0 or st.session_state.loaded_files or st.session_state.loaded_folders:
