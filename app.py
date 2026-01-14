@@ -15,7 +15,11 @@ CLOUD_PUBLIC = "https://cloud.mail.ru/public"
 API_FOLDER = "https://cloud.mail.ru/api/v2/folder"
 API_TOKEN = "https://cloud.mail.ru/api/v2/tokens/download"
 
-HEADERS = {"User-Agent": "Mozilla/5.0", "Accept": "*/*"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "*/*",
+    "Referer": f"https://cloud.mail.ru/public/{DEFAULT_SHARE}",
+}
 
 PROGRESS_PATH = "progress.json"
 PAGE_SIZE = 200
