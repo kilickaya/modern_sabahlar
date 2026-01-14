@@ -24,6 +24,29 @@ HEADERS = {
 PROGRESS_PATH = "progress.json"
 PAGE_SIZE = 200
 
+@st.cache_resource(show_spinner=False)
+def get_http():
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    return s
+
+def prime_public_session(http: requests.Session, share: str) -> None:
+    url = f"{CLOUD_PUBLIC}/{safe_quote(share.strip('/'))}"
+    http.get(url, timeout=30)
+
+@st.cache_data(ttl=60 * 10, show_spinner=False)
+def get_download_token_cached(share: str) -> str:
+    http = get_http()
+    prime_public_session(http, share)
+    r = http.post(API_TOKEN, data={"api": "2"}, timeout=30)
+    if r.status_code >= 400:
+        raise RuntimeError(f"tokens/download failed: {r.status_code} {r.text[:200]}")
+    data = r.json()
+    return data["body"]["token"]
+
+def get_download_token(share: str) -> str:
+    return get_download_token_cached(share)
+
 def safe_quote(s: str) -> str:
     return urllib.parse.quote(s, safe="~@#$()*!=:;,.?/\\'")
 
@@ -49,23 +72,7 @@ def write_progress(d: dict) -> None:
         except Exception:
             pass
 
-@st.cache_data(ttl=60 * 5, show_spinner=False)
-def get_download_token_cached() -> str:
-    r = requests.get(API_TOKEN, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    return data["body"]["token"]
 
-def get_download_token() -> str:
-    if "token" not in st.session_state or "token_ts" not in st.session_state:
-        st.session_state.token = get_download_token_cached()
-        st.session_state.token_ts = st.session_state.get("now_ts", 0)
-        return st.session_state.token
-    age = st.session_state.get("now_ts", 0) - st.session_state.token_ts
-    if age > 60 * 4:
-        st.session_state.token = get_download_token_cached()
-        st.session_state.token_ts = st.session_state.get("now_ts", 0)
-    return st.session_state.token
 
 @st.cache_data(ttl=60 * 30, show_spinner=False)
 def get_base_url(share: str) -> str:
