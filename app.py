@@ -65,16 +65,17 @@ def get_download_token() -> str:
 
 @st.cache_data(ttl=60 * 30, show_spinner=False)
 def get_base_url(share: str) -> str:
-    url = f"{CLOUD_PUBLIC}/{safe_quote(share.strip('/'))}"
-    r = requests.get(url, headers=HEADERS, timeout=30)
+    r = requests.get("https://cloud.mail.ru/api/v2/dispatcher", headers=HEADERS, timeout=30)
     r.raise_for_status()
-    text = r.text
-    m = re.search(r'"weblink_get"\s*:\s*\[\s*\{\s*"count"\s*:\s*1\s*,\s*"url"\s*:\s*"([^"]+)"', text)
-    if not m:
-        m = re.search(r'"weblink_get"\s*:\s*\[\s*\{[^}]*"url"\s*:\s*"([^"]+)"', text)
-    if not m:
-        raise RuntimeError("Could not find weblink_get base URL in public page HTML.")
-    return m.group(1)
+    data = r.json()
+    body = data.get("body", {}) or {}
+    weblink_get = body.get("weblink_get") or body.get("weblink_get_url") or None
+    if isinstance(weblink_get, list) and weblink_get and isinstance(weblink_get[0], dict) and "url" in weblink_get[0]:
+        return weblink_get[0]["url"]
+    if isinstance(weblink_get, str) and weblink_get:
+        return weblink_get
+    raise RuntimeError("Dispatcher did not return body.weblink_get[0].url")
+
 
 def list_dir(share: str, offset: int, limit: int) -> dict:
     params = {"weblink": share.strip("/"), "offset": offset, "limit": limit, "api": 2}
